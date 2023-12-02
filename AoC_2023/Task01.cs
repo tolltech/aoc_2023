@@ -1,9 +1,7 @@
-﻿using System;
-using System.Linq;
-using FluentAssertions;
+﻿using FluentAssertions;
 using NUnit.Framework;
 
-namespace AoC_2022
+namespace AoC_2023
 {
     [TestFixture]
     public class Task01

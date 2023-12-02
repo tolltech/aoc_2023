@@ -55,5 +55,10 @@ namespace AoC_2023
         {
             return dict.TryGetValue(key, out var v) ? v : val;
         }
+
+        public static string[] SplitEmpty(this string str, params string[] separators)
+        {
+            return str.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+        }
     }
 }

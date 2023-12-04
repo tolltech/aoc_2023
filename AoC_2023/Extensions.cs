@@ -61,6 +61,11 @@ namespace AoC_2023
             return str.Split(separators, StringSplitOptions.RemoveEmptyEntries);
         }
 
+        public static string[] SplitLines(this string str, params string[] separators)
+        {
+            return str.SplitEmpty("\r", "\n");
+        }
+
         public static IEnumerable<(T Item, (int Row, int Col) Index)> GetAllNeighbours<T>(T[][] map,
             (int Row, int Col) src)
         {

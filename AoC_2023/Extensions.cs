@@ -82,5 +82,10 @@ namespace AoC_2023
                 yield return (map[row][col], (row, col));
             }
         }
+
+        public static string JoinToString<T>(this IEnumerable<T> items, string separator = "")
+        {
+            return string.Join(separator, items);
+        }
     }
 }

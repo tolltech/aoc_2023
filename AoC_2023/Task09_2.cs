@@ -4,15 +4,15 @@ using NUnit.Framework;
 namespace AoC_2023
 {
     [TestFixture]
-    public class Task09
+    public class Task09_2
     {
         [Test]
         [TestCase(
             @"0 3 6 9 12 15
 1 3 6 10 15 21
 10 13 16 21 30 45",
-            114)]        
-        [TestCase(@"Task09.txt", 1974232246)]
+            2)]        
+        [TestCase(@"Task09.txt", 928)]
         public void Task(string input, int expected)
         {
             input = File.Exists(input) ? File.ReadAllText(input) : input;
@@ -41,11 +41,11 @@ namespace AoC_2023
 
                 for (var i = rows.Count - 2; i >= 0; --i)
                 {
-                    var newItem = rows[i + 1].Last() + rows[i].Last();
-                    rows[i].Add(newItem);
+                    var newItem = rows[i].First() - rows[i + 1].First();
+                    rows[i].Insert(0, newItem);
                 }
 
-                result += rows[0].Last();
+                result += rows[0].First();
             } 
             
             result.Should().Be(expected);

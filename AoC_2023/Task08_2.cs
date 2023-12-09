@@ -36,12 +36,15 @@ XXX = (XXX, XXX)",
                 map[lineSplits[0]] = (leftRight[0], leftRight[1]);
             }
 
-            var steps = 0;
+            var zs = new HashSet<long>();
+            var pathLength = commands.Length;
             var paths = map.Keys.Where(c => c.EndsWith("A"));
+            var cycles = new Dictionary<(string Node, int InternalStepNumber), (int First, int Last)>();
             foreach (var path in paths)
             {
-                var cycles = new Dictionary<string,(int StepCount, bool Repeated)>();
+                var steps = 0;
                 var current = path;
+                var pathWasCycled = false;
                 while (true)
                 {
                     foreach (var command in commands)
@@ -50,18 +53,31 @@ XXX = (XXX, XXX)",
                             ? map[current].Left
                             : map[current].Right;
 
-                        ++steps;
                         if (current.EndsWith("Z"))
                         {
-                            
+                            if (cycles.TryGetValue((current, steps % pathLength), out var first))
+                            {
+                                cycles[(current, steps % pathLength)] = (first.First, steps);
+                                pathWasCycled = true;
+                                break;
+                            }
+                            else
+                            {
+                                cycles[(current, steps % pathLength)] = (steps, -1);
+                            }
                         }
+
+                        ++steps;
                     }
 
-                    if (current == "ZZZ") break;
-                }   
+                    if (cycles.Count > 0 && cycles.Values.All(x => x.Last != -1) && pathWasCycled)
+                    {
+                        break;
+                    }
+                }
             }
 
-            steps.Should().Be(expected);
+            0.Should().Be(expected);
         }
     }
 }

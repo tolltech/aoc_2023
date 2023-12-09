@@ -7,20 +7,20 @@ namespace AoC_2023
     public class Task08_2
     {
         [Test]
-        [TestCase(
-            @"LR
-
-11A = (11B, XXX)
-11B = (XXX, 11Z)
-11Z = (11B, XXX)
-22A = (22B, XXX)
-22B = (22C, 22C)
-22C = (22Z, 22Z)
-22Z = (22B, 22B)
-XXX = (XXX, XXX)",
-            6)]
-        [TestCase(@"Task08.txt", 0)]
-        public void Task(string input, int expected)
+//         [TestCase(
+//             @"LR
+//
+// 11A = (11B, XXX)
+// 11B = (XXX, 11Z)
+// 11Z = (11B, XXX)
+// 22A = (22B, XXX)
+// 22B = (22C, 22C)
+// 22C = (22Z, 22Z)
+// 22Z = (22B, 22B)
+// XXX = (XXX, XXX)",
+//             6)]
+        [TestCase(@"Task08.txt", 13663968099527L)]
+        public void Task(string input, long expected)
         {
             input = File.Exists(input) ? File.ReadAllText(input) : input;
 
@@ -37,16 +37,14 @@ XXX = (XXX, XXX)",
             }
 
             var totalZs = map.Keys.Where(x => x.EndsWith("Z")).ToHashSet();
-            var visitedZs = new HashSet<string>();
             var pathLength = commands.Length;
-            var paths = map.Keys.Where(c => c.EndsWith("A"));
+            var paths = map.Keys.Where(c => c.EndsWith("A")).ToArray();
             var cycles = new Dictionary<(string Node, int InternalStepNumber), (int First, int Last)>();
             foreach (var path in paths)
             {
                 var steps = -1;
                 var current = path;
                 var internalCycles = new Dictionary<(string Node, int InternalStepNumber), (int First, int Last)>();
-                var cycledZs = new HashSet<string>();
                 while (true)
                 {
                     foreach (var command in commands)
@@ -58,13 +56,11 @@ XXX = (XXX, XXX)",
 
                         if (current.EndsWith("Z"))
                         {
-                            visitedZs.Add(current);
                             if (internalCycles.TryGetValue((current, steps % pathLength), out var first))
                             {
                                 if (first.Last != -1) continue;
                                 
                                 internalCycles[(current, steps % pathLength)] = (first.First, steps);
-                                cycledZs.Add(current);
                             }
                             else
                             {
@@ -83,15 +79,22 @@ XXX = (XXX, XXX)",
                         }
                     }
 
-                    if (totalZs.All(x => visitedZs.Contains(x))) break;
+                    if (internalCycles.Count > 0 && internalCycles.Values.All(x => x.Last != -1))
+                    {
+                        break;
+                    }
                 }
 
-                var a = 2;
-
-                //todo: merge internalcycles;
+                if (internalCycles.Count != 1) throw new NotImplementedException();
+                cycles[internalCycles.Single().Key] = internalCycles.Single().Value;
             }
 
-            0.Should().Be(expected);
+            if (cycles.Count != paths.Length) throw new NotImplementedException();
+
+            var periods = cycles.Values.Select(x => (x.First, x.Last - x.First)).ToArray();
+            //13939,17621,11309,20777,19199,15517 nok
+
+            13663968099527L.Should().Be(expected);
         }
     }
 }

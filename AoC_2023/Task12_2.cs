@@ -15,55 +15,69 @@ namespace AoC_2023
 ????.######..#####. 1,6,5
 ?###???????? 3,2,1",
             525152)]
+        [TestCase(@"???.### 1,1,3", 1)]
+        [TestCase(@".??..??...?##. 1,1,3", 16384)]
+        [TestCase(@"?#?#?#?#?#?#?#? 1,3,1,6", 1)]
+        [TestCase(@"????.#...#... 4,1,1", 16)]
+        [TestCase(@"????.######..#####. 1,6,5", 2500)]
+        [TestCase(@"?###???????? 3,2,1", 506250)]
         [TestCase(@"Task12.txt", 0)]
-        public void Task(string input, int expected)
+        public void Task(string input, long expected)
         {
             input = File.Exists(input) ? File.ReadAllText(input) : input;
 
-            var result = 0;
+            var result = 0L;
 
             foreach (var line in input.SplitLines())
             {
-                var number = line.SplitEmpty(" ")[0].Replace(".", "0").Replace("#", "1");
-                var mask = line.SplitEmpty(" ")[1].SplitEmpty(",").Select(int.Parse).ToArray();
+                var number = Enumerable.Range(0, 5).Select(x => line.SplitEmpty(" ")[0]).JoinToString("?");
+                var mask = Enumerable.Repeat(line.SplitEmpty(" ")[1].SplitEmpty(",").Select(int.Parse).ToArray(), 5)
+                    .SelectMany(x => x).ToArray();
 
-                var cnt = number.Count(c => c == '?');
-                for (var variant = 0; variant < (1 << cnt); ++variant)
-                {
-                    var realNumber = GetNumber(number, variant);
-                    if (Check(realNumber, mask)) ++result;
-                }
+                result += Calculate(number, mask);
             }
 
             result.Should().Be(expected);
         }
 
-        private bool Check(string realNumber, int[] mask)
+        private long Calculate(string number, int[] mask, int numberIndex = 0, int maskIndex = 0, int hashAcc = 0, Dictionary<(int,int,int), long>? cache = null)
         {
-            var splits = realNumber.SplitEmpty("0");
-            if (splits.Length != mask.Length) return false;
-            for (var i = 0; i < splits.Length; ++i)
+            cache ??= new Dictionary<(int, int, int), long>();
+            var cacheKey = (numberIndex, maskIndex, maskInternalIndex: hashAcc);
+            if (cache.TryGetValue(cacheKey, out var val)) return val;
+
+            if (numberIndex == number.Length)
             {
-                if (splits[i].Length != mask[i]) return false;
+                return maskIndex == mask.Length && hashAcc == 0
+                       || maskIndex == mask.Length - 1 && hashAcc == mask.Last()
+                    ? 1
+                    : 0;
             }
 
-            return true;
-        }
+            var count = 0L;
 
-        private string GetNumber(string number, int variant)
-        {
-            var charNumber = number.ToArray();
-            var cnt = 0;
-            for (var i = charNumber.Length - 1; i >= 0; i--)
+            var currentC = number[numberIndex];
+            if (currentC == '.')
             {
-                if (charNumber[i] == '?')
-                {
-                    charNumber[i] = (variant & (1 << cnt)) > 0 ? '1' : '0';
-                    cnt++;
-                }
+                if (maskIndex < mask.Length && hashAcc == mask[maskIndex]) count += Calculate(number, mask, numberIndex + 1, maskIndex + 1, 0, cache);
+                if (hashAcc == 0) count += Calculate(number, mask, numberIndex + 1, maskIndex, 0, cache);
             }
 
-            return new string(charNumber);
+            if (currentC == '#')
+            {
+                count += Calculate(number, mask, numberIndex + 1, maskIndex, hashAcc + 1, cache);
+            }
+
+            if (currentC == '?')
+            {
+                if (maskIndex < mask.Length && hashAcc == mask[maskIndex]) count += Calculate(number, mask, numberIndex + 1, maskIndex + 1, 0, cache);
+                if (hashAcc == 0) count += Calculate(number, mask, numberIndex + 1, maskIndex, 0, cache);
+                
+                count += Calculate(number, mask, numberIndex + 1, maskIndex, hashAcc + 1, cache);
+            }
+            
+            cache[cacheKey] = count;
+            return count;
         }
     }
 }

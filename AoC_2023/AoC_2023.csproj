@@ -11,6 +11,7 @@
       <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
       <PackageReference Include="NUnit" Version="3.14.0" />
       <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
+      <PackageReference Include="System.Collections.Specialized" Version="4.3.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -54,6 +55,9 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
       <None Update="Task14.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Task15.txt">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>

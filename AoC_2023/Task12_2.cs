@@ -21,7 +21,7 @@ namespace AoC_2023
         [TestCase(@"????.#...#... 4,1,1", 16)]
         [TestCase(@"????.######..#####. 1,6,5", 2500)]
         [TestCase(@"?###???????? 3,2,1", 506250)]
-        [TestCase(@"Task12.txt", 0)]
+        [TestCase(@"Task12.txt", 3384337640277L)]
         public void Task(string input, long expected)
         {
             input = File.Exists(input) ? File.ReadAllText(input) : input;

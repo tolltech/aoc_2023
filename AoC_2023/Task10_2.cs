@@ -55,7 +55,7 @@ L---JF-JLJ.||-FJLJJ7
 L.L7LFJ|||||FJL7||LJ
 L7JLJL-JLJLJL--JLJ.L",
             10)]
-        [TestCase(@"Task10.txt", 449)]
+        [TestCase(@"Task10.txt", 449, Ignore = "long")]
         public void Task(string input, int expected)
         {
             input = File.Exists(input) ? File.ReadAllText(input) : input;

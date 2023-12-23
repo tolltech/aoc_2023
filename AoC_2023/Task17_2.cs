@@ -6,7 +6,7 @@ using NUnit.Framework;
 namespace AoC_2023
 {
     [TestFixture]
-    public class Task17
+    public class Task17_2
     {
         [Test]
         [TestCase(
@@ -23,8 +23,15 @@ namespace AoC_2023
 1224686865563
 2546548887735
 4322674655533",
-            102)]
-        [TestCase(@"Task17.txt", 684)]
+            94)]
+        [TestCase(
+            @"111111111111
+999999999991
+999999999991
+999999999991
+999999999991",
+            71)]
+        [TestCase(@"Task17.txt", 0)]
         public void Task(string input, int expected)
         {
             input = File.Exists(input) ? File.ReadAllText(input) : input;
@@ -98,14 +105,18 @@ namespace AoC_2023
         {
             foreach (var next in Extensions.GetVerticalHorizontalNeighboursDirections(map, (current.Row, current.Column)))
             {
+                if (current.PrevDirections.Length > 0 && current.PrevDirections.Last().ToString() == opposites[codes[next.Direction]])
+                    continue;
+                
                 var nextP = (next.Index.Row, next.Index.Col,
-                    new string(current.PrevDirections.TakeLast(2).ToArray()) + codes[next.Direction]);
+                    new string(current.PrevDirections.TakeLast(9).ToArray()) + codes[next.Direction]);
+
                 if (marked.Contains(nextP)) continue;
+                
+                
 
                 if (current.PrevDirections.Length == 3 && current.PrevDirections.Distinct().Count() == 1
                                                       && current.PrevDirections.Distinct().Single().ToString() == codes[next.Direction])
-                    continue;
-                if (current.PrevDirections.Length > 0 && current.PrevDirections.Last().ToString() == opposites[codes[next.Direction]])
                     continue;
 
                 yield return nextP;

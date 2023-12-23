@@ -100,6 +100,24 @@ namespace AoC_2023
                 yield return (map[row][col], (row, col));
             }
         }
+        
+        public static IEnumerable<(T Item, (int Row, int Col) Index, (int, int) Direction)> GetVerticalHorizontalNeighboursDirections<T>(T[][] map,
+            (int Row, int Col) src)
+        {
+            for (var i = -1; i <= 1; ++i)
+            for (var j = -1; j <= 1; j++)
+            {
+                if (j == 0 && i == 0) continue;
+                if (j != 0 && i != 0) continue;
+
+                var row = src.Row + i;
+                var col = src.Col + j;
+
+                if (row < 0 || col < 0 || row >= map.Length || map.Length == 0 || col >= map[0].Length) continue;
+
+                yield return (map[row][col], (row, col), (i, j));
+            }
+        }
 
         public static string JoinToString<T>(this IEnumerable<T> items, string separator = "")
         {

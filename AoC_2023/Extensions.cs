@@ -123,5 +123,10 @@ namespace AoC_2023
         {
             return string.Join(separator, items);
         }
+        
+        public static string GetLastOrEmpty(this string src)
+        {
+            return src.Length > 0 ? src.Last().ToString() : string.Empty;
+        }
     }
 }

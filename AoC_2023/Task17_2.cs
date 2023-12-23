@@ -31,7 +31,7 @@ namespace AoC_2023
 999999999991
 999999999991",
             71)]
-        [TestCase(@"Task17.txt", 0)]
+        [TestCase(@"Task17.txt", 822)]
         public void Task(string input, int expected)
         {
             input = File.Exists(input) ? File.ReadAllText(input) : input;
@@ -42,7 +42,9 @@ namespace AoC_2023
 
             //var s = Print(distances, map);
 
-            var result = distances[(map.Length - 1, map[0].Length - 1)].Min(x => x.Value);
+            var result = distances[(map.Length - 1, map[0].Length - 1)]
+                .Where(x => new string(x.Key.TakeLast(4).ToArray()).Distinct().Count() == 1)
+                .Min(x => x.Value);
 
             result.Should().Be(expected);
         }
@@ -105,7 +107,7 @@ namespace AoC_2023
         {
             foreach (var next in Extensions.GetVerticalHorizontalNeighboursDirections(map, (current.Row, current.Column)))
             {
-                if (current.PrevDirections.Length > 0 && current.PrevDirections.Last().ToString() == opposites[codes[next.Direction]])
+                if (current.PrevDirections.GetLastOrEmpty() == opposites[codes[next.Direction]])
                     continue;
                 
                 var nextP = (next.Index.Row, next.Index.Col,
@@ -113,10 +115,12 @@ namespace AoC_2023
 
                 if (marked.Contains(nextP)) continue;
                 
-                
+                if (current.PrevDirections.Length == 10 && current.PrevDirections.Distinct().Count() == 1
+                                                       && current.PrevDirections.Distinct().Single().ToString() == codes[next.Direction])
+                    continue;
 
-                if (current.PrevDirections.Length == 3 && current.PrevDirections.Distinct().Count() == 1
-                                                      && current.PrevDirections.Distinct().Single().ToString() == codes[next.Direction])
+                var last4 = new string(current.PrevDirections.TakeLast(4).ToArray());
+                if (last4.Length > 0 && (last4.Length != 4 || last4.Distinct().Count() != 1) && last4.Last().ToString() != codes[next.Direction])
                     continue;
 
                 yield return nextP;

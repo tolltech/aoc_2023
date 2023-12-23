@@ -100,12 +100,12 @@ namespace AoC_2023
             {
                 var nextP = (next.Index.Row, next.Index.Col,
                     new string(current.PrevDirections.TakeLast(2).ToArray()) + codes[next.Direction]);
-                if (marked.Contains(nextP)) continue;
+                //if (marked.Contains(nextP)) continue;
 
                 if (current.PrevDirections.Length == 3 && current.PrevDirections.Distinct().Count() == 1
                                                       && current.PrevDirections.Distinct().Single().ToString() == codes[next.Direction])
                     continue;
-                if (current.PrevDirections.Length > 0 && current.PrevDirections.Last().ToString() == opposites[codes[next.Direction]])
+                if (current.PrevDirections.GetLastOrEmpty() == opposites[codes[next.Direction]])
                     continue;
 
                 yield return nextP;

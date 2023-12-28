@@ -23,7 +23,7 @@ namespace AoC_2023
 %b -> con
 &con -> output",
             11687500)]
-        [TestCase(@"Task20.txt", 0)]
+        [TestCase(@"Task20.txt", 737679780)]
         public void Task(string input, long expected)
         {
             input = File.Exists(input) ? File.ReadAllText(input) : input;
@@ -47,11 +47,6 @@ namespace AoC_2023
                 ops[con.Key].InputMem = ops.Where(x => x.Value.Targets.Contains(con.Key))
                     .ToDictionary(x => x.Key, x => false);
             }
-
-            ops["output"] = new Device
-            {
-                Op = Op.Output
-            };
 
             var highResults = 0L;
             var lowResults = 0L;
@@ -82,6 +77,9 @@ namespace AoC_2023
 
                 if (currentSignal.HighSignal) high++;
                 else low++;
+                
+                if (!ops.ContainsKey(currentSignal.Target))
+                    continue;
 
                 var current = ops[currentSignal.Target];
 
@@ -104,15 +102,13 @@ namespace AoC_2023
                     case Op.BroadCaster:
                         newSignal = false;
                         break;
-                    case Op.Output: continue;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
 
                 foreach (var newTarget in current.Targets)
                 {
-                    if (ops.ContainsKey(newTarget))
-                        pulses.Enqueue((newTarget, currentSignal.Target, newSignal));
+                    pulses.Enqueue((newTarget, currentSignal.Target, newSignal));
                 }
             }
 
@@ -123,8 +119,7 @@ namespace AoC_2023
         {
             FlipFlop,
             Conjunction,
-            BroadCaster,
-            Output
+            BroadCaster
         }
 
         class Device

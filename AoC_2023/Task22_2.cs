@@ -7,7 +7,7 @@ using NUnit.Framework;
 namespace AoC_2023
 {
     [TestFixture]
-    public class Task22
+    public class Task22_2
     {
         [Test]
         [TestCase(
@@ -18,8 +18,8 @@ namespace AoC_2023
 2,0,5~2,2,5
 0,1,6~2,1,6
 1,1,8~1,1,9",
-            5)]
-        [TestCase(@"Task22.txt", 522)]
+            7)]
+        [TestCase(@"Task22.txt", 83519, Ignore = "long")]
         public void Task(string input, long expected)
         {
             input = File.Exists(input) ? File.ReadAllText(input) : input;
@@ -39,17 +39,26 @@ namespace AoC_2023
                 .OrderBy(x => x.MinZ)
                 .ToArray();
 
-            for (var i = 0; i < cubes.Length; ++i)
+            Gravitate(cubes);
+
+            var safeCubes = GetSafeCubes(cubes);
+            
+            var result = 0L;
+            for (var i = 0; i < cubes.Length; i++)
             {
                 var cube = cubes[i];
-                if (cube.MinZ == 1) continue;
-
-                var newZ = cubes.Where(x => x.MaxZ < cube.MinZ).Where(x => Intersect(x.Rectangle, cube.Rectangle))
-                    .MaxOrDefault(x => x.MaxZ) + 1;
-
-                cubes[i] = cube.MoveDown(cube.MinZ - newZ);
+                
+                if (safeCubes.Contains(cube)) continue;
+                
+                var copy = cubes.Where(x => !Equals(x, cube)).ToArray();
+                result += Gravitate(copy);
             }
 
+            result.Should().Be((int)expected);
+        }
+
+        private HashSet<Cube> GetSafeCubes(Cube[] cubes)
+        {
             var upCubes = cubes.ToDictionary(x => x, x => new List<Cube>());
             var downCubes = cubes.ToDictionary(x => x, x => new List<Cube>());
 
@@ -64,14 +73,30 @@ namespace AoC_2023
                 }
             }
 
-            var supportiveCubes = downCubes
+            return downCubes
                 .Where(x => 
                     x.Value.All(u => upCubes[u].Count > 1 )
                 )
                 .Select(x => x.Key).ToHashSet();
+        }
 
-            var result = supportiveCubes.Count;
-            result.Should().Be((int)expected);
+        private int Gravitate(Cube[] cubes)
+        {
+            var result = 0;
+            for (var i = 0; i < cubes.Length; ++i)
+            {
+                var cube = cubes[i];
+                if (cube.MinZ == 1) continue;
+
+                var newZ = cubes.Where(x => x.MaxZ < cube.MinZ).Where(x => Intersect(x.Rectangle, cube.Rectangle))
+                    .MaxOrDefault(x => x.MaxZ) + 1;
+
+                if (newZ != cube.MinZ) result++;
+
+                cubes[i] = cube.MoveDown(cube.MinZ - newZ);
+            }
+
+            return result;
         }
 
         private bool IsSupport(Cube downCube, Cube upCube)

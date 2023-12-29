@@ -51,6 +51,12 @@ namespace AoC_2023
             return new HashSet<T>(ts);
         }
 
+        public static int MaxOrDefault<T>(this IEnumerable<T> src, Func<T, int> pred)
+        {
+            var array = src.ToArray();
+            return !array.Any() ? 0 : array.Max(pred);
+        }
+
         public static TValue SafeGet<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue val = default)
         {
             return dict.TryGetValue(key, out var v) ? v : val;

@@ -7,7 +7,7 @@ using NUnit.Framework;
 namespace AoC_2023
 {
     [TestFixture]
-    public class Task23
+    public class Task23_2
     {
         [Test]
         [TestCase(
@@ -34,8 +34,8 @@ namespace AoC_2023
 #.###.###.#.###.#.#v###
 #.....###...###...#...#
 #####################.#",
-            94)]
-        [TestCase(@"Task23.txt", 2402)]
+            154)]
+        [TestCase(@"Task23.txt", 0)]
         public void Task(string input, int expected)
         {
             input = File.Exists(input) ? File.ReadAllText(input) : input;
@@ -70,7 +70,8 @@ namespace AoC_2023
                 Number = NodeNumber++
             };
 
-            BuildGraph(nodeMap, map, root, (1, startColumn), (Row: map.Length - 1, Column: endColumn));
+            var visited = new HashSet<Node>();
+            BuildGraph(nodeMap, map, root, (1, startColumn), (Row: map.Length - 1, Column: endColumn), visited);
 
             return root;
         }
@@ -92,10 +93,13 @@ namespace AoC_2023
             }
         }
         
-        private void BuildGraph(Dictionary<(int Row, int Column), Node> nodes, char[][] map, Node currentNode, (int Row, int Column) nextStep, (int Row, int Column) endIndex)
+        private void BuildGraph(Dictionary<(int Row, int Column), Node> nodes, char[][] map, Node currentNode,
+            (int Row, int Column) nextStep, (int Row, int Column) endIndex, HashSet<Node> visited)
         {
             var currentIndex = currentNode.Index;
             nodes[currentIndex] = currentNode;
+
+            if (visited.Contains(currentNode)) return;
 
             var weight = 1;
             var prevIndex = currentIndex;
@@ -103,12 +107,9 @@ namespace AoC_2023
             
             while (true)
             {
-                var currentItem = map[currentIndex.Row][currentIndex.Column];
-                var neighbours = !directions.TryGetValue(currentItem, out var dir)
-                    ? Extensions.GetVerticalHorizontalNeighbours(map, currentIndex)
-                        .Where(x => x.Item == '.' || char.IsLetterOrDigit(x.Item) || directions.ContainsKey(x.Item))
-                        .Select(x => x.Index).ToArray()
-                    : new[] { (currentIndex.Row + dir.Item1, currentIndex.Column + dir.Item2) };
+                var neighbours = Extensions.GetVerticalHorizontalNeighbours(map, currentIndex)
+                        .Where(x => x.Item == '.' || char.IsLetterOrDigit(x.Item) || directions.Contains(x.Item))
+                        .Select(x => x.Index).ToArray();
 
                 neighbours = neighbours.Where(x => x != prevIndex).ToArray();
 
@@ -157,13 +158,16 @@ namespace AoC_2023
 
                 foreach (var neighbour in neighbours)
                 {
-                    BuildGraph(nodes, map, newNode, neighbour, endIndex);
+                    visited.Add(currentNode);
+                    BuildGraph(nodes, map, newNode, neighbour, endIndex, visited);
+                    visited.Remove(currentNode);
                 }
 
                 return;
             }
         }
 
+        private static readonly HashSet<char> directions = new HashSet<char> { '>', 'v' };
 
         private void Dfs(HashSet<(int Row, int Column)> visited, Dictionary<(int Row, int Column), int> pathLengths,
             char[][] map, (int Row, int Column) currentIndex, (int Row, int Column) endIndex, int pathLength)
@@ -181,20 +185,9 @@ namespace AoC_2023
 
             if (currentIndex == endIndex) return;
 
-            var currentItem = map[currentIndex.Row][currentIndex.Column];
-
-            if (directions.TryGetValue(currentItem, out var dir))
-            {
-                visited.Add(currentIndex);
-                Dfs(visited, pathLengths, map, (currentIndex.Row + dir.Item1, currentIndex.Column + dir.Item2),
-                    endIndex, pathLength + 1);
-                visited.Remove(currentIndex);
-                return;
-            }
-
             foreach (var neighbour in Extensions.GetVerticalHorizontalNeighbours(map, currentIndex))
             {
-                if (neighbour.Item != '.' && !char.IsLetterOrDigit(neighbour.Item) && !directions.ContainsKey(neighbour.Item)) continue;
+                if (neighbour.Item != '.' && !char.IsLetterOrDigit(neighbour.Item) && !directions.Contains(neighbour.Item)) continue;
 
                 visited.Add(currentIndex);
                 Dfs(visited, pathLengths, map, neighbour.Index, endIndex, pathLength + 1);
@@ -219,13 +212,6 @@ namespace AoC_2023
 
             return sb.ToString();
         }
-
-
-        private static Dictionary<char, (int, int)> directions = new Dictionary<char, (int, int)>
-        {
-            { '>', (0, 1) },
-            { 'v', (1, 0) },
-        };
 
         private static (int Row, int Column)[] Directions = new[]
         {

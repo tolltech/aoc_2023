@@ -11,7 +11,7 @@ namespace AoC_2023
     {
         [Test]
         [TestCase(
-            @"#.#####################
+            @"#a#####################
 #.......#########...###
 #######.#########.#.###
 ###.....#.>c>.###.#.###
@@ -33,7 +33,7 @@ namespace AoC_2023
 #...#...#.#.>h>.#.>g###
 #.###.###.#.###.#.#v###
 #.....###...###...#...#
-#####################.#",
+#####################z#",
             154)]
         [TestCase(@"Task23.txt", 0)]
         public void Task(string input, int expected)
@@ -45,15 +45,15 @@ namespace AoC_2023
             //var visited = new HashSet<(int Row, int Column)>();
             //var paths = new Dictionary<(int Row, int Column), int>();
             // var startColumn = map[0].Select((c, i) => (c, i)).Single(x => x.c == '.').i;
-            var endColumn = map.Last().Select((c, i) => (c, i)).Single(x => x.c == '.').i;
+            var endColumn = map.Last().Select((c, i) => (c, i)).Single(x => x.c == '.' || x.c == 'z').i;
             // Dfs(visited, paths, map, (Row: 0, Column: startColumn), (Row: map.Length - 1, Column: endColumn), 0);
 
             var root = BuildGraph(map, out var nodeMap);
 
             var pathLengths = new Dictionary<Node, int>();
             DfsNode(new HashSet<Node>(), pathLengths, root, 0);
-            var result = pathLengths[nodeMap[(map.Length - 1, endColumn)]];
-            result.Should().Be(expected);
+//            var result = pathLengths[nodeMap[(map.Length - 1, endColumn)]];
+            max.Should().Be(expected);
         }
 
         private static int NodeNumber;
@@ -61,8 +61,8 @@ namespace AoC_2023
         private Node BuildGraph(char[][] map, out Dictionary<(int Row, int Column), Node> nodeMap)
         {
             nodeMap = new Dictionary<(int Row, int Column), Node>();
-            var startColumn = map[0].Select((c, i) => (c, i)).Single(x => x.c == '.').i;
-            var endColumn = map.Last().Select((c, i) => (c, i)).Single(x => x.c == '.').i;
+            var startColumn = map[0].Select((c, i) => (c, i)).Single(x => x.c == 'a' || x.c == '.').i;
+            var endColumn = map.Last().Select((c, i) => (c, i)).Single(x => x.c == '.' || x.c == 'z').i;
             var root = new Node
             {
                 Index = (Row: 0, Column: startColumn),
@@ -76,13 +76,15 @@ namespace AoC_2023
             return root;
         }
 
+        private static int max = 0;
+        
         private void DfsNode(HashSet<Node> visited, Dictionary<Node, int> pathLengths, Node currentNode, int pathLength)
         {
             if (visited.Contains(currentNode)) return;
 
-            if (!pathLengths.ContainsKey(currentNode) || pathLengths[currentNode] < pathLength)
+            if (currentNode.Label == 'z' && max < pathLength)
             {
-                pathLengths[currentNode] = pathLength;
+                max = pathLength;
             }
             
             foreach (var edge in currentNode.Edges)

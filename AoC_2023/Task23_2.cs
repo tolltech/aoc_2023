@@ -39,189 +39,102 @@ namespace AoC_2023
         public void Task(string input, int expected)
         {
             input = File.Exists(input) ? File.ReadAllText(input) : input;
-
+            input = input.Replace(">", ".").Replace("v", ".");
             var map = input.SplitLines().Select(x => x.ToArray()).ToArray();
 
-            //var visited = new HashSet<(int Row, int Column)>();
-            //var paths = new Dictionary<(int Row, int Column), int>();
-            // var startColumn = map[0].Select((c, i) => (c, i)).Single(x => x.c == '.').i;
-            var endColumn = map.Last().Select((c, i) => (c, i)).Single(x => x.c == '.' || x.c == 'z').i;
-            // Dfs(visited, paths, map, (Row: 0, Column: startColumn), (Row: map.Length - 1, Column: endColumn), 0);
-
-            var root = BuildGraph(map, out var nodeMap);
-
-            var pathLengths = new Dictionary<Node, int>();
-            DfsNode(new HashSet<Node>(), pathLengths, root, 0);
-//            var result = pathLengths[nodeMap[(map.Length - 1, endColumn)]];
+            var root = BuildGraph(map);
+            
             max.Should().Be(expected);
         }
 
-        private static int NodeNumber;
-        
-        private Node BuildGraph(char[][] map, out Dictionary<(int Row, int Column), Node> nodeMap)
+        private static int max = 0;
+        private static int NodeNumber = 0;
+
+        private Node BuildGraph(char[][] map)
         {
-            nodeMap = new Dictionary<(int Row, int Column), Node>();
             var startColumn = map[0].Select((c, i) => (c, i)).Single(x => x.c == 'a' || x.c == '.').i;
             var endColumn = map.Last().Select((c, i) => (c, i)).Single(x => x.c == '.' || x.c == 'z').i;
             var root = new Node
             {
                 Index = (Row: 0, Column: startColumn),
-                Label = '.',
+                Label = 'a',
                 Number = NodeNumber++
             };
 
-            var visited = new HashSet<Node>();
-            BuildGraph(nodeMap, map, root, (1, startColumn), (Row: map.Length - 1, Column: endColumn), visited);
+            var nodes = new Dictionary<(int Row, int Column), Node>();
+
+            nodes[root.Index] = root;
+
+            for (var i = 0; i < map.Length; i++)
+            for (var j = 0; j < map[0].Length; j++)
+            {
+                if (map[i][j] == '#') continue;
+                
+                var neighbours = Extensions.GetVerticalHorizontalNeighbours(map, (i, j))
+                    .Where(x => x.Item != '#')
+                    .ToArray();
+                
+                if (neighbours.Length <= 2) continue;
+
+                nodes[(i, j)] = new Node
+                {
+                    Index = (i, j),
+                    Label = map[i][j],
+                    Number = NodeNumber++
+                };
+            }
+            
+            var end = new Node
+            {
+                Index = (Row: map.Length - 1, Column: endColumn),
+                Label = 'z',
+                Number = NodeNumber++
+            };
+            nodes[end.Index] = end;
+
+            foreach (var node in nodes)
+            {
+                AddEdges(nodes, node.Value, map);
+            }
 
             return root;
         }
 
-        private static int max = 0;
-        
-        private void DfsNode(HashSet<Node> visited, Dictionary<Node, int> pathLengths, Node currentNode, int pathLength)
+        private void AddEdges(Dictionary<(int Row, int Column),Node> nodes, Node node, char[][] map)
         {
-            if (visited.Contains(currentNode)) return;
-
-            if (currentNode.Label == 'z' && max < pathLength)
+            var neighbours = Extensions.GetVerticalHorizontalNeighbours(map, node.Index)
+                .Where(x => x.Item != '#')
+                .Select(x => x.Index).ToArray();
+            foreach (var neighbour in neighbours)
             {
-                max = pathLength;
-            }
-            
-            foreach (var edge in currentNode.Edges)
-            {
-                visited.Add(currentNode);
-                DfsNode(visited, pathLengths, edge.Node, pathLength + edge.Weight);
-                visited.Remove(currentNode);
-            }
-        }
-        
-        private void BuildGraph(Dictionary<(int Row, int Column), Node> nodes, char[][] map, Node currentNode,
-            (int Row, int Column) nextStep, (int Row, int Column) endIndex, HashSet<Node> visited)
-        {
-            var currentIndex = currentNode.Index;
-            nodes[currentIndex] = currentNode;
+                var prevIndex = node.Index;
+                var currentIndex = neighbour;
+                var length = 0;
 
-            if (visited.Contains(currentNode)) return;
-
-            var weight = 1;
-            var prevIndex = currentIndex;
-            currentIndex = nextStep;
-            
-            while (true)
-            {
-                var neighbours = Extensions.GetVerticalHorizontalNeighbours(map, currentIndex)
-                        .Where(x => x.Item == '.' || char.IsLetterOrDigit(x.Item) || directions.Contains(x.Item))
-                        .Select(x => x.Index).ToArray();
-
-                neighbours = neighbours.Where(x => x != prevIndex).ToArray();
-
-                if (neighbours.Length == 0)
+                while (true)
                 {
-                    if (currentIndex == endIndex)
+                    ++length;
+                    var nextIndex = Extensions
+                        .GetVerticalHorizontalNeighbours(map, currentIndex)
+                        .Where(x => x.Item != '#')
+                        .Select(x => x.Index)
+                        .Single(x => x != prevIndex);
+
+                    if (nodes.TryGetValue(nextIndex, out var endNode))
                     {
-                        var endNode = nodes!.SafeGet(currentIndex) ?? new Node
+                        node.Edges.Add(new Edge
                         {
-                            Label = map[currentIndex.Row][currentIndex.Column],
-                            Index = currentIndex,
-                            Number = NodeNumber++
-                        };
-
-                        nodes[endNode.Index] = endNode;
-                        
-                        currentNode.Edges.Add(new Edge
-                        {
-                            Weight = weight,
-                            Node = endNode
+                            Node = endNode,
+                            Weight = length + 1
                         });
+                        break;
                     }
-                    return;
-                }
 
-                if (neighbours.Length == 1)
-                {
-                    weight++;
                     prevIndex = currentIndex;
-                    currentIndex = neighbours.Single();
-                    continue;
+                    currentIndex = nextIndex;
                 }
-
-                var newNode = nodes!.SafeGet(currentIndex) ?? new Node
-                {
-                    Index = currentIndex,
-                    Label = map[currentIndex.Row][currentIndex.Column],
-                    Number = NodeNumber++
-                };
-
-                currentNode.Edges.Add(new Edge
-                {
-                    Weight = weight,
-                    Node = newNode
-                });
-
-                foreach (var neighbour in neighbours)
-                {
-                    visited.Add(currentNode);
-                    BuildGraph(nodes, map, newNode, neighbour, endIndex, visited);
-                    visited.Remove(currentNode);
-                }
-
-                return;
             }
         }
-
-        private static readonly HashSet<char> directions = new HashSet<char> { '>', 'v' };
-
-        private void Dfs(HashSet<(int Row, int Column)> visited, Dictionary<(int Row, int Column), int> pathLengths,
-            char[][] map, (int Row, int Column) currentIndex, (int Row, int Column) endIndex, int pathLength)
-        {
-            var s = Print(map, visited);
-            TestContext.Out.WriteLine(s);
-            TestContext.Out.WriteLine();
-
-            if (visited.Contains(currentIndex)) return;
-
-            if (!pathLengths.ContainsKey(currentIndex) || pathLengths[currentIndex] < pathLength)
-            {
-                pathLengths[currentIndex] = pathLength;
-            }
-
-            if (currentIndex == endIndex) return;
-
-            foreach (var neighbour in Extensions.GetVerticalHorizontalNeighbours(map, currentIndex))
-            {
-                if (neighbour.Item != '.' && !char.IsLetterOrDigit(neighbour.Item) && !directions.Contains(neighbour.Item)) continue;
-
-                visited.Add(currentIndex);
-                Dfs(visited, pathLengths, map, neighbour.Index, endIndex, pathLength + 1);
-                visited.Remove(currentIndex);
-            }
-        }
-
-        private static string Print<T>(T[][] map, HashSet<(int, int)> visited)
-        {
-            var sb = new StringBuilder();
-
-            for (int i = 0; i < map.Length; i++)
-            {
-                for (int j = 0; j < map[0].Length; j++)
-                {
-                    if (visited.Contains((i, j))) sb.Append('O');
-                    else sb.Append(map[i][j]);
-                }
-
-                sb.AppendLine();
-            }
-
-            return sb.ToString();
-        }
-
-        private static (int Row, int Column)[] Directions = new[]
-        {
-            (0, 1),
-            (1, 0),
-            (0, -1),
-            (-1, 0),
-        };
 
         [DebuggerDisplay("({Number}{Label.ToString()})")]
         class Node

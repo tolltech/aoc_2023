@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Diagnostics;
-using System.Text;
+﻿using System.Diagnostics;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -43,12 +41,26 @@ namespace AoC_2023
             var map = input.SplitLines().Select(x => x.ToArray()).ToArray();
 
             var root = BuildGraph(map);
-            
-            max.Should().Be(expected);
+
+            CheckLength(root).Max().Should().Be(expected);
+        }
+
+        private IEnumerable<int> CheckLength(Node root)
+        {
+            var mask = int.MinValue;
+            while (true)
+            {
+                var maskStr = $"11{mask.ToString("X").ToBinFromHex()}11";
+
+                
+
+                yield return mask;
+                if (mask == int.MaxValue) break;
+                mask++;
+            }
         }
 
         private static int max = 0;
-        private static int NodeNumber = 0;
 
         private Node BuildGraph(char[][] map)
         {
@@ -58,49 +70,56 @@ namespace AoC_2023
             {
                 Index = (Row: 0, Column: startColumn),
                 Label = 'a',
-                Number = NodeNumber++
+                Number = 0
             };
+
+            var first = root;
 
             var nodes = new Dictionary<(int Row, int Column), Node>();
 
             nodes[root.Index] = root;
 
+            var end = new Node
+            {
+                Index = (Row: map.Length - 1, Column: endColumn),
+                Label = 'z',
+                Number = -1
+            };
+            nodes[end.Index] = end;
+
             for (var i = 0; i < map.Length; i++)
             for (var j = 0; j < map[0].Length; j++)
             {
                 if (map[i][j] == '#') continue;
-                
+                if (nodes.ContainsKey((i, j))) continue;
+
                 var neighbours = Extensions.GetVerticalHorizontalNeighbours(map, (i, j))
                     .Where(x => x.Item != '#')
                     .ToArray();
-                
+
                 if (neighbours.Length <= 2) continue;
 
                 nodes[(i, j)] = new Node
                 {
                     Index = (i, j),
                     Label = map[i][j],
-                    Number = NodeNumber++
+                    Number = -1
                 };
             }
-            
-            var end = new Node
-            {
-                Index = (Row: map.Length - 1, Column: endColumn),
-                Label = 'z',
-                Number = NodeNumber++
-            };
-            nodes[end.Index] = end;
+
+            end.Number = nodes.Count - 1;
+
+            var last = end;
 
             foreach (var node in nodes)
             {
-                AddEdges(nodes, node.Value, map);
+                AddEdges(nodes, node.Value, map, first, last);
             }
 
             return root;
         }
 
-        private void AddEdges(Dictionary<(int Row, int Column),Node> nodes, Node node, char[][] map)
+        private void AddEdges(Dictionary<(int Row, int Column), Node> nodes, Node node, char[][] map, Node first, Node last)
         {
             var neighbours = Extensions.GetVerticalHorizontalNeighbours(map, node.Index)
                 .Where(x => x.Item != '#')
@@ -122,6 +141,16 @@ namespace AoC_2023
 
                     if (nodes.TryGetValue(nextIndex, out var endNode))
                     {
+                        if (node == first)
+                        {
+                            endNode.Number = 1;
+                        }
+
+                        if (node == last)
+                        {
+                            endNode.Number = last.Number - 1;
+                        }
+
                         node.Edges.Add(new Edge
                         {
                             Node = endNode,

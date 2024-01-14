@@ -43,7 +43,7 @@ namespace AoC_2023
                 sb.Append(bin[c]);
             }
 
-            return sb.ToString();
+            return sb.ToString().TrimStart('0');
         }
 
         public static HashSet<T> ToHashSet<T>(this IEnumerable<T> ts)

@@ -33,36 +33,63 @@ namespace AoC_2023
 #.....###...###...#...#
 #####################z#",
             154)]
-        [TestCase(@"Task23.txt", 0)]
+        [TestCase(@"Task23.txt", 6450)]
         public void Task(string input, int expected)
         {
             input = File.Exists(input) ? File.ReadAllText(input) : input;
             input = input.Replace(">", ".").Replace("v", ".");
             var map = input.SplitLines().Select(x => x.ToArray()).ToArray();
 
-            var root = BuildGraph(map);
+            var root = BuildGraph(map, out var nodes);
 
-            CheckLength(root).Max().Should().Be(expected);
+            var max = DfsNode(new HashSet<Node>(), root, 0);
+            
+            max.Should().Be(expected);
         }
 
-        private IEnumerable<int> CheckLength(Node root)
+        private static int globalMax = -1;
+
+        // private IEnumerable<int> CheckLength(Node root, int nodesCount)
+        // {
+        //     var cnt = (long)Math.Pow(2, nodesCount - 4);
+        //     for (long mask = cnt - 1; mask >= 0; --mask)
+        //     {
+        //         var maskStr = $"11{mask.ToString("X").ToBinFromHex().PadLeft(nodesCount - 4, '0')}11";
+        //
+        //         var max = DfsNode(new HashSet<Node>(), root, 0, maskStr);
+        //
+        //         if (max > globalMax)
+        //             globalMax = max;
+        //
+        //         yield return max;
+        //     }
+        // }
+
+        private int DfsNode(HashSet<Node> visited, Node currentNode, int pathLength)
         {
-            var mask = int.MinValue;
-            while (true)
+            if (visited.Contains(currentNode)) return -1;
+
+            if (currentNode.Label == 'z')
             {
-                var maskStr = $"11{mask.ToString("X").ToBinFromHex()}11";
-
-                
-
-                yield return mask;
-                if (mask == int.MaxValue) break;
-                mask++;
+                return pathLength;
             }
+
+            var max = -1;
+            foreach (var edge in currentNode.Edges)
+            {
+                visited.Add(currentNode);
+                var newMax = DfsNode(visited, edge.Node, pathLength + edge.Weight);
+                visited.Remove(currentNode);
+                if (newMax > max)
+                {
+                    max = newMax;
+                }
+            }
+
+            return max;
         }
 
-        private static int max = 0;
-
-        private Node BuildGraph(char[][] map)
+        private Node BuildGraph(char[][] map, out Dictionary<(int Row, int Column), Node> totalNodes)
         {
             var startColumn = map[0].Select((c, i) => (c, i)).Single(x => x.c == 'a' || x.c == '.').i;
             var endColumn = map.Last().Select((c, i) => (c, i)).Single(x => x.c == '.' || x.c == 'z').i;
@@ -76,6 +103,7 @@ namespace AoC_2023
             var first = root;
 
             var nodes = new Dictionary<(int Row, int Column), Node>();
+            totalNodes = nodes;
 
             nodes[root.Index] = root;
 
@@ -111,15 +139,21 @@ namespace AoC_2023
 
             var last = end;
 
+            var nodeNumber = 2;
             foreach (var node in nodes)
             {
                 AddEdges(nodes, node.Value, map, first, last);
+                if (node.Value.Number == -1)
+                {
+                    node.Value.Number = nodeNumber++;
+                }
             }
 
             return root;
         }
 
-        private void AddEdges(Dictionary<(int Row, int Column), Node> nodes, Node node, char[][] map, Node first, Node last)
+        private void AddEdges(Dictionary<(int Row, int Column), Node> nodes, Node node, char[][] map, Node first,
+            Node last)
         {
             var neighbours = Extensions.GetVerticalHorizontalNeighbours(map, node.Index)
                 .Where(x => x.Item != '#')

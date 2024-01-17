@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.X86;
 using System.Text;
 using FluentAssertions;
@@ -32,12 +33,13 @@ namespace AoC_2023
 
                 lines.Add(new Line
                 {
-                    Point = new Vector3(pointSplits[0], pointSplits[1], pointSplits[2]),
-                    Velocity = new Vector3(vSplits[0], vSplits[1], vSplits[2])
+                    Point = new Vector2(pointSplits[0], pointSplits[1]),
+                    Velocity = new Vector2(vSplits[0], vSplits[1])
                 });
             }
 
             var result = 0L;
+            var list = new List<(Vector2 Point, Vector2 Velocity, float C)>();
             for (var i = 0; i < lines.Count; i++)
             for (var j = i + 1; j < lines.Count; j++)
             {
@@ -46,78 +48,36 @@ namespace AoC_2023
                 var one = lines[i];
                 var other = lines[j];
 
-                if (IsSamePlate(one, other))
-                {
-                    result++;
-                }
+                list.Add(GetNumbers(one, other));
             }
-
+            
             result.Should().Be(expected);
         }
-        
-        private bool IsSamePlate(Line one, Line other)
-        {
-            var m1m2 = other.Point - one.Point;
 
-            var m = Vector3.Dot(one.Point, (other.Point * m1m2));
-            return m == 0;
+        private (Vector2 Point, Vector2 Velocity, float C) GetNumbers(Line one, Line other)
+        {
+            var p1 = one.Point;
+            var p2 = other.Point;
+            var v1 = one.Velocity;
+            var v2 = other.Velocity;
+
+            return (
+                new Vector2(v2.Y - v1.Y, v1.X - v2.X),
+                new Vector2(p1.Y - p2.Y, p2.X - p1.X),
+                Vector2.Dot(p2, GetOrt(v2)) - Vector2.Dot(p1, GetOrt(v1))
+            );
         }
 
-        [Test]
-        public void TestT()
+        Vector2 GetOrt(Vector2 v)
         {
-            var p1 = new Vector3(-2, 4, 6);
-            var m1 = new Vector3(-4, -5, 6);
-
-            var p2 = new Vector3(1, -2, 3);
-            var m2 = new Vector3(0, 1, -3);
-
-            var m1m2 = m2 - m1;
-            var m = Vector3.Dot(p1, Vector3.Cross(p2, m1m2));
-
-            var ss = Vector3.Cross(p2, m1m2);
-            var a = p2;
-            var b = m1m2;
-            var sss = new Vector3(a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X);
-            m.Should().Be(0);
+            return new Vector2(-v.Y, v.X);
         }
-        
-        [Test]
-        public void TestT2()
-        {
-            var m1 = new Vector3(0, 1, 4);
-            var p1 = new Vector3(1, 2, 3);
-
-            var m2 = new Vector3(3, 6, 11);
-            var p2 = new Vector3(2, 3, 4);
-
-            var m1m2 = m2 - m1;
-            var m = Vector3.Dot(p1, Vector3.Cross(p2, m1m2));
-            
-            m.Should().Be(0);
-        }
-
 
         [DebuggerDisplay("{Point.X},{Point.Y},{Point.Z}@{Velocity.X},{Velocity.Y},{Velocity.Z}")]
         struct Line
         {
-            public Vector3 Point { get; set; }
-            public Vector3 Velocity { get; set; }
-
-            public float X1 => Point.X;
-            public float Y1 => Point.Y;
-
-            public float X2 => Point.X + Velocity.X;
-            public float Y2 => Point.Y + Velocity.Y;
-
-            //y — y1 = (y2 — y1) * (x — x1)
-            // (x2 — x1) * y  - (x2 — x1) * y1 = (y2 — y1) * (x — x1)
-            // (x2—x1)*y - (y2-y1)*x + (y2-y1)*x1-(x2—x1)*y1 = 0
-            //  a      x    b      y   c  
-            // (y2-y1)*x - (x2—x1)*y - (y2-y1)*x1+(x2—x1)*y1 = 0
-            public float A => Y2 - Y1;
-            public float B => -(X2 - X1);
-            public float C => -((Y2 - Y1) * X1) + (X2 - X1) * Y1;
+            public Vector2 Point { get; set; }
+            public Vector2 Velocity { get; set; }
         }
     }
 }
